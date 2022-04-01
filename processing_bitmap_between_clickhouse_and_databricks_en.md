@@ -2,9 +2,9 @@
 
 ## PROBLEM DESCRIPTION
 
-We have a tagging system which has been expected to take 5 minutes for customer id bitmap generation. However 70 minutes was spent by the current approach, by processing bitmap serialization directly, we now hit 2 minutes with ease.
+We have a tagging system which has been expected to take 5 minutes for customer id bitmap generation. However 70 minutes was spent by the previous approach, by processing bitmap serialization directly, we now hit 2 minutes with ease.
 
-With current approach, we have to parse each customer id collection twice to support union and intersection between two customer id collection, and it would spend lots of time to sync collection between Clickhouse and Databricks.
+With previous approach, we have to parse each customer id collection twice to support union and intersection between two customer id collection, and it would spend lots of time to sync collection between Clickhouse and Databricks.
 
 ```plantuml
 @startuml Currrent approach
