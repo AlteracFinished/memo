@@ -6,8 +6,10 @@ We have a tagging system which has been expected to take 5 minutes for customer 
 
 With previous approach, we have to parse each customer id collection twice to support union and intersection between two customer id collection, and it would spend lots of time to sync collection between Clickhouse and Databricks.
 
+![previous_approach](./processing_bitmap_between_clickhouse_and_databricks/previous_approach.png)
+
 ```plantuml
-@startuml Currrent approach
+@startuml Previous approach
 AzureDataFactory -> Databricks : Trigger tagging pipeline execution
 Databricks -> Clickhouse : Generate (tag_id, customer_id) list from tag_customer_relation for each tag\n and insert into tag_{tag_id}_customer_relation in Clickhouse
 Databricks <- Clickhouse : Load (tag_id, customer_id) list \nfrom tag_{tag_id}_customer_relation
@@ -60,6 +62,8 @@ Before processing the tag relation notebook in Databricks, each customer_id bitm
 Clickhouse processing bitmap with CRoaring, but there is no Java implementation for CRoaring. We can look into how Clickhouse read/write bitmap:
 
 ![bitmap_in_clickhouse](./processing_bitmap_between_clickhouse_and_databricks/bitmap_write_in_clickhouse.png)
+
+![bitmap_write](./processing_bitmap_between_clickhouse_and_databricks/bitmap_write.png)
 
 ```plantuml
 @startuml bitmap write
@@ -115,6 +119,7 @@ select tag_id, base64encode(toString(customer_ids)) from tag_customer_relation_d
 
 Roaring64NavigableMap is a Java Int64 bitmap implementation class preloaded in Databricks. It's reasonable to do serialization/deserialization with this class.
 
+![bitmap_serialize](./processing_bitmap_between_clickhouse_and_databricks/Roaring64NavigableMap_serialize.png)
 
 ```plantuml
 @startuml Roaring64NavigableMap serialize
@@ -127,6 +132,8 @@ end
 ```
 
 ## APPROACH WITH ENCODED BITMAP
+
+![current_approach](./processing_bitmap_between_clickhouse_and_databricks/current_approach.png)
 
 ```plantuml
 @startuml Approach based on processing bitmap string encode
