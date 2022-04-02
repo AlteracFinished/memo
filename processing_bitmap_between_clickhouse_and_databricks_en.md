@@ -266,7 +266,7 @@ def deserialize(input: String): Roaring64NavigableMap = {
 
 ## CONCLUSION
 
-The approach here is not an official way to create bitmap object in Clickhouse, so it brings more works during upgrade Clickhouse version. However, comparing with bitmap aggreration in Clickhouse, the approach saves lots of time and io bandwidth, which is very helpful to optimize the execution of the tagging progress in Databricks.
+The approach here is not an official way to create bitmap object in Clickhouse, so it brings more works during upgrade Clickhouse version. However, comparing with bitmap aggregation in Clickhouse, the approach saves lots of time and io bandwidth, which is very helpful to optimize the execution of the tagging progress in Databricks.
 
 
 ## REFERENCES
