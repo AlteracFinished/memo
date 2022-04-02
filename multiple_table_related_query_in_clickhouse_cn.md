@@ -16,6 +16,15 @@
 5. 支持customer关联customer_channel_relation及channel的会员品牌关联查询
 6. channel表记录个数在20以内
 7. customer、customer_identity、customer_channel_relation、channel表存在一个定时任务从MySQL将记录抽取至Clickhouse
+![sync_data](./multiple_table_related_query_in_clickhouse/sync_data_from_mysql_to_clickhouse.png)
+```plantuml
+@startuml Sync customer data from MySQL to Clickhouse
+XXLJOBServer -> JavaServer : Trigger scheduled function for data synchronization
+JavaServer -> Clickhouse : Execute SQL to fetch customer data from MySQL(insert into statement)
+Clickhouse <- MySQL : Fetch all sharded customer data
+JavaServer -> Clickhouse : Execute SQL to merge same customer records to one record(optimize statement)
+@enduml
+```
 8. customer表需要支持千万级数据
 9. customer、customer_identity、customer_channel_relation、channel表的表引擎都是ReplicatedReplacingMergeTree
 

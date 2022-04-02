@@ -1,30 +1,30 @@
-# Read & Write Clickhouse Bitmap in Databricks
+# Read & Write ClickHouse Bitmap in Databricks
 
 ## PROBLEM DESCRIPTION
 
-We have a tagging system which has been expected to take 5 minutes for customer id bitmap generation. However 70 minutes was spent by the previous approach, by processing bitmap serialization directly, we now hit 2 minutes with ease.
+We have a tagging system which expected to take 5 minutes for customer id bitmap generation, but the previous approach spent 70 minutes. By processing bitmap serialization directly, we now hit 2 minutes with ease.
 
-With previous approach, we have to parse each customer id collection twice to support union and intersection between two customer id collection, and it would spend lots of time to sync collection between Clickhouse and Databricks.
+With the previous approach, each customer id collection was parsed twice to support Union and Intersection between two customer id collections. It also spends lots of time in synchronization between ClickHouse and Databricks.
 
 ![previous_approach](./processing_bitmap_between_clickhouse_and_databricks/previous_approach.png)
 
 ```plantuml
 @startuml Previous approach
 AzureDataFactory -> Databricks : Trigger tagging pipeline execution
-Databricks -> Clickhouse : Generate (tag_id, customer_id) list from tag_customer_relation for each tag\n and insert into tag_{tag_id}_customer_relation in Clickhouse
-Databricks <- Clickhouse : Load (tag_id, customer_id) list \nfrom tag_{tag_id}_customer_relation
+Databricks -> ClickHouse : Generate (tag_id, customer_id) list from tag_customer_relation for each tag\n and insert into tag_{tag_id}_customer_relation in ClickHouse
+Databricks <- ClickHouse : Load (tag_id, customer_id) list \nfrom tag_{tag_id}_customer_relation
 Databricks -> StorageService : Save (tag_id, customer_id) list into table in Delta format
 Databricks <- StorageService : Load customer_id array from saved table in Delta format
 Databricks -> Databricks : Process tagging, generate new customer_id array related to new tag_id
 Databricks -> StorageService : Save (new_tag_id, customer_id) list into table in Delta format
 StorageService -> Databricks :  Load customer_id array from saved table in Delta format
-Databricks -> Clickhouse : Save (new_tag_id, customer_id) list into tag_{new_tag_id}_customer_relation
-Clickhouse -> Clickhouse : Generate bitmap from tag_{new_tag_id}_customer_relation\n and insert into tag_customer_relation
+Databricks -> ClickHouse : Save (new_tag_id, customer_id) list into tag_{new_tag_id}_customer_relation
+ClickHouse -> ClickHouse : Generate bitmap from tag_{new_tag_id}_customer_relation\n and insert into tag_customer_relation
 @enduml
 ```
 
 Customer tagging relation is saved as following schema(version column is ignored):
-###### tag_customer_relation table in Clickhouse
+###### tag_customer_relation table in ClickHouse
 | Name               | Type | Description                                                     |
 | ------------------ | -------- | ------------------------------------------------------------ |
 | tag_id             | Int64   | Business tag id, created in Java server                            |
@@ -36,7 +36,7 @@ CREATE TABLE tag_customer_relation_local ON CLUSTER `default_cluster`
   tag_id Int64,
   customer_ids AggregateFunction(groupBitmap, Int64)
 )
-ENGINE = ReplicatedReplacingMergeTree('/clickhouse/tables/{shard}/{uuid}', '{replica}') 
+ENGINE = ReplicatedReplacingMergeTree('/ClickHouse/tables/{shard}/{uuid}', '{replica}') 
 ORDER BY (tag_id)
 SETTINGS index_granularity = 8192;
 
@@ -48,22 +48,22 @@ CREATE TABLE tag_customer_relation_distributed ON CLUSTER `default_cluster`
 ENGINE = Distributed('default_cluster', 'default', 'tag_customer_relation_local', tag_id)
 ```
 
-However, customer_id collection is generated in Databricks. Since "bitmap" in Clickhouse is not exist in Databricks, we have to flat map customer id collection related to tag_id, and save the Dataframe with the following schema into Clickhouse:
+However, all customer_ids result was calculated in Databricks. Since "bitmap" in ClickHouse is not exist in Databricks, we have to flat map customer id collection related to tag_id, and save the Dataframe with the following schema into ClickHouse:
 ###### tag_{tag_id}_customer_relation Dataframe schema
 | Name               | Type | Description                                                     |
 | ------------------ | -------- | ------------------------------------------------------------ |
 | tag_id             | Int64   | Business tag id, created in Java server       |
 | customer_id          | Int64   | Member id related to this tag  |
 
-Before processing the tag relation notebook in Databricks, each customer_id bitmap would be mapped to tag_{tag_id}_customer_relation in Clickhouse and loaded by spark JDBC in Databricks.
+Before processing the tag relation notebook in Databricks, each customer_id bitmap was mapped to tag_{tag_id}_customer_relation in ClickHouse and loaded by spark JDBC in Databricks.
 
-## BITMAP IN CLICKHOUSE
+## BITMAP IN ClickHouse
 
-Clickhouse processing bitmap with CRoaring, but there is no Java implementation for CRoaring. We can look into how Clickhouse read/write bitmap:
+ClickHouse processing bitmap with CRoaring, but there is no Java implementation for CRoaring. We can look into how ClickHouse reads and writes bitmap:
 
-![bitmap_in_clickhouse](./processing_bitmap_between_clickhouse_and_databricks/bitmap_write_in_clickhouse.png)
+![bitmap_in_ClickHouse](./processing_bitmap_between_ClickHouse_and_databricks/bitmap_write_in_ClickHouse.png)
 
-![bitmap_write](./processing_bitmap_between_clickhouse_and_databricks/bitmap_write.png)
+![bitmap_write](./processing_bitmap_between_ClickHouse_and_databricks/bitmap_write.png)
 
 ```plantuml
 @startuml bitmap write
@@ -81,9 +81,9 @@ end
 @enduml
 ```
 
-Clickhouse doesn't provide API to create bitmap from ByteArray in newest version, so we have to insert base64encoded string into Clickhouse, and decode it in Clickhouse.
+ClickHouse doesn't provide API to create Bitmap from ByteArray in the current version, so we must insert Base64 encoded string into ClickHouse, and decode it in ClickHouse.
 
-#### Write bitmap into Clickhouse
+#### Write bitmap into ClickHouse
 ```sql
 CREATE TABLE tag_customer_relation_local_temp ON CLUSTER `default_cluster` 
 (
@@ -92,7 +92,7 @@ CREATE TABLE tag_customer_relation_local_temp ON CLUSTER `default_cluster`
   customer_ids AggregateFunction(groupBitmap, Int64) 
                 MATERIALIZED base64Decode(customer_id_str)
 )
-ENGINE = ReplicatedReplacingMergeTree('/clickhouse/tables/{shard}/{uuid}', '{replica}') 
+ENGINE = ReplicatedReplacingMergeTree('/ClickHouse/tables/{shard}/{uuid}', '{replica}') 
 ORDER BY (tag_id)
 SETTINGS index_granularity = 8192;
 
@@ -109,7 +109,7 @@ insert into tag_customer_relation_distributed_temp(tag_id, customer_id_str) valu
 insert into tag_customer_relation_distributed(tag_id, customer_ids) select tag_id, customer_ids from tag_customer_relation_distributed_temp
 ```
 
-### Read bitmap from Clickhouse
+### Read bitmap from ClickHouse
 ```sql
 select tag_id, base64encode(toString(customer_ids)) from tag_customer_relation_distributed
 ```
@@ -119,7 +119,7 @@ select tag_id, base64encode(toString(customer_ids)) from tag_customer_relation_d
 
 Roaring64NavigableMap is a Java Int64 bitmap implementation class preloaded in Databricks. It's reasonable to do serialization/deserialization with this class.
 
-![bitmap_serialize](./processing_bitmap_between_clickhouse_and_databricks/Roaring64NavigableMap_serialize.png)
+![bitmap_serialize](./processing_bitmap_between_ClickHouse_and_databricks/Roaring64NavigableMap_serialize.png)
 
 ```plantuml
 @startuml Roaring64NavigableMap serialize
@@ -133,18 +133,18 @@ end
 
 ## APPROACH WITH ENCODED BITMAP
 
-![current_approach](./processing_bitmap_between_clickhouse_and_databricks/current_approach.png)
+![current_approach](./processing_bitmap_between_ClickHouse_and_databricks/current_approach.png)
 
 ```plantuml
 @startuml Approach based on processing bitmap string encode
 AzureDataFactory -> Databricks : Trigger tagging pipeline execution
-Databricks <- Clickhouse : Load (tag_id, base64Encoded(customer_ids)) \nfrom tag_customer_relation
+Databricks <- ClickHouse : Load (tag_id, base64Encoded(customer_ids)) \nfrom tag_customer_relation
 Databricks -> StorageService : Decode each base64Encoded(customer_ids),\n save (tag_id, customer_ids Array) list into table in Delta format
 Databricks -> Databricks : Process tagging, generate new customer_id array related to new tag_id
 Databricks -> StorageService : Save (new_tag_id, customer_ids Array) list into table in Delta format
 StorageService -> Databricks :  Load customer_ids array from saved table in Delta format\n encode customer_ids Array
-Databricks -> Clickhouse : Save (new_tag_id, base64Encoded(customer_ids)) list into tag_customer_relation_temp
-Clickhouse -> Clickhouse : Read tag_customer_relation_temp\n and move records to tag_customer_relation
+Databricks -> ClickHouse : Save (new_tag_id, base64Encoded(customer_ids)) list into tag_customer_relation_temp
+ClickHouse -> ClickHouse : Read tag_customer_relation_temp\n and move records to tag_customer_relation
 @enduml
 ```
 
@@ -262,15 +262,15 @@ def deserialize(input: String): Roaring64NavigableMap = {
 }
 ```
 
-** Both tested in Azure Databricks with Spark 2.4.5, Clickhouse 21.8
+** Both tested in Azure Databricks with Spark 2.4.5, ClickHouse 21.8
 
 ## CONCLUSION
 
-The approach here is not an official way to create bitmap object in Clickhouse, so it brings more works during upgrade Clickhouse version. However, comparing with bitmap aggregation in Clickhouse, the approach saves lots of time and io bandwidth, which is very helpful to optimize the execution of the tagging progress in Databricks.
+The approach here is not an official way to create Bitmap in ClickHouse, so it makes ClickHouse version upgrading is being more complicated. Compared with the previous one, the approach here saves lots of time and io bandwidth, which is very helpful to optimize the execution of the tagging progress in Databricks.
 
 
 ## REFERENCES
 
 1. [SparkSQL & ClickHouse RoaringBitmap使用实践](https://blog.csdn.net/qq_27639777/article/details/111005838)
-2. [Bitmap read/write implementation in Clickhouse](https://github.com/ClickHouse/ClickHouse/blob/master/src/AggregateFunctions/AggregateFunctionGroupBitmapData.h#L112)
+2. [Bitmap read/write implementation in ClickHouse](https://github.com/ClickHouse/ClickHouse/blob/master/src/AggregateFunctions/AggregateFunctionGroupBitmapData.h#L112)
 3. [SparkSQL & ClickHouse RoaringBitmap64格式支持](https://blog.csdn.net/fz1989/article/details/117222801)
