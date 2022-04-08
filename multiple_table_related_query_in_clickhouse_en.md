@@ -76,6 +76,20 @@ from clusterAllReplicas(`{defaultCluster}`, view(select event_time from `system`
 4. Aggregating channel ids and brand ids to bitmaps and paging in customer table.
 
 ### APPROACH 1
+
+#### Sequence diagram
+![Approach 1](./multiple_table_related_query_in_clickhouse/approach_1.png)
+```plantuml
+@startuml Approach 1
+actor Client
+XXLJOBServer -> JavaServer : Trigger scheduled function for \ndata synchronization
+MySQL -> ClickHouse : Sync `customer`, `customer_channel_relation`,\n `customer_identity` tables data to ClickHouse
+Client -> JavaServer : Send customer query request to Java Server
+JavaServer <-> ClickHouse : Make following SQL query
+JavaServer -> Client : Make response for customer query
+@enduml
+```
+
 ```sql
 select customer.* from customer 
 left join customer_channel_relation on customer_channel_relation.customer_id = customer.id
@@ -96,6 +110,20 @@ Disadvantages: It costs 10GB RAM to do the join query. And the customer query sp
 
 ### APPROACH 2
 Create a customer_query_merge_tree table in ClickHouse to make the paging query only in one table. Insert data into this table during synchronization.
+
+#### Sequence diagram
+![Approach 2](./multiple_table_related_query_in_clickhouse/approach_2.png)
+```plantuml
+@startuml Approach 2
+actor Client
+XXLJOBServer -> JavaServer : Trigger scheduled function for \ndata synchronization
+MySQL -> ClickHouse : Sync `customer`, `customer_channel_relation`,\n `customer_identity` tables data to ClickHouse
+ClickHouse -> ClickHouse : Combine `customer` with `customer_channel_relation` \nand insert data into `customer_query_merge_tree`
+Client -> JavaServer : Send customer query request to Java Server
+JavaServer <-> ClickHouse : Make following SQL query in `customer_query_merge_tree`
+JavaServer -> Client : Make response for customer query
+@enduml
+```
 
 #### customer_query_merge_tree
 | Name               | Type | Description                                                     |
@@ -123,6 +151,20 @@ Disadvantages: More insertion during synchronization, spent more than 3 minutes 
 ### APPROACH 3
 Create a customer_query_view materialized view in ClickHouse to make the paging aggregated query only in one table. Insert data into this table during synchronization.
 
+#### Sequence diagram
+![Approach 3](./multiple_table_related_query_in_clickhouse/approach_3.png)
+```plantuml
+@startuml Approach 3
+actor Client
+XXLJOBServer -> JavaServer : Trigger scheduled function for \ndata synchronization
+MySQL -> ClickHouse : Sync `customer`, `customer_channel_relation`,\n `customer_identity` tables data to ClickHouse
+ClickHouse -> ClickHouse : Combine `customer` with `customer_channel_relation` \nand insert data into `customer_query_view`
+Client -> JavaServer : Send customer query request to Java Server
+JavaServer <-> ClickHouse : Make following SQL query in `customer_query_view`
+JavaServer -> Client : Make response for customer query
+@enduml
+```
+
 #### customer_query_view
 | Name               | Type | Description                                                     |
 | ------------------ | -------- | ------------------------------------------------------------ |
@@ -149,6 +191,20 @@ Disadvantages: More insertion during synchronization, spent more than 60 seconds
 
 ### APPROACH 4
 Approach 2 and 3 spent too much time on table optimization, so we gave up the big aggregated table and aggregated the query param only into Bitmap.
+
+#### Sequence diagram
+![Approach 4](./multiple_table_related_query_in_clickhouse/approach_4.png)
+```plantuml
+@startuml Approach 4
+actor Client
+XXLJOBServer -> JavaServer : Trigger scheduled function for \ndata synchronization
+MySQL -> ClickHouse : Sync `customer`, `customer_channel_relation`,\n `customer_identity` tables data to ClickHouse
+ClickHouse -> ClickHouse :  Do aggregation on `customer_channel_relation`\n and insert result into `customer_query_aggregation`
+Client -> JavaServer : Send customer query request to Java Server
+JavaServer <-> ClickHouse : Make following SQL query in `customer_query_aggregation` and `customer`
+JavaServer -> Client : Make response for customer query
+@enduml
+```
 
 #### customer_query_aggregation
 
