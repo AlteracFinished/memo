@@ -1,10 +1,10 @@
 # Modify configs for SSL connections in JDK 8
 
 ## PROBLEM DESCRIPTION
-MySQL/Redis in cloud services maybe configed as SSL only, which prevent Java server accessing without SSL configuration. In addition to configuration in Java Server Process, we have to check whether SSL is enabled in JDK.
+MySQL/Redis in cloud services could be configured as SSL only, which prevents the Java server connect MySQL/Redis without SSL configuration. In addition to SSL connection properties in the Java Server Process, we should modify the configuration in JRE.
 
 ## SOLUTION
-Edit `jdk.tls.disabledAlgorithms` configuration in `java.security`(Path maybe `/etc/alternatives/jre_1.8.0_openjdk/lib/security/java.security` in Centos 7), remove `SSL` if exists.
+Edit `jdk.tls.disabledAlgorithms` configuration in `java.security`(Path maybe `/etc/alternatives/jre_1.8.0_openjdk/lib/security/java.security` in Centos 7), remove `SSL` or `TLS` if exists.
 
 ##### Before
 ![Before](./pics/ssl_config_before.png)

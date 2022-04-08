@@ -2,7 +2,7 @@
 
 ## Java Server
 
-1. [JDK SSL configuration for MySQL/Redis connections.]()
+1. [JDK SSL configuration for MySQL/Redis connections.](https://github.com/AlteracFinished/memo/blob/main/memo/JDK_8_ssl_config.md)
 
 ## Databricks
 
