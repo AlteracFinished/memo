@@ -101,8 +101,8 @@ Create a customer_query_merge_tree table in ClickHouse to make the paging query 
 | Name               | Type | Description                                                     |
 | ------------------ | -------- | ------------------------------------------------------------ |
 | other columns in customer | | |
-| channel_ids     | Array(Int64)   | customer relates channel id array  |
-| brand_ids       | Array(Int64)   | customer relates brand id array  |
+| channel_ids     | Array(Int64)   | channel id array related to customer  |
+| brand_ids       | Array(Int64)   | brand id array related to customer  |
 
 ```sql
 select * from customer_query_merge_tree
