@@ -3,6 +3,8 @@
 ## Java Server
 
 1. [JDK SSL configuration for MySQL/Redis connections.](https://github.com/AlteracFinished/memo/blob/main/memo/JDK_8_ssl_config.md)
+2. [Error Handling with Spring AMQP(from baeldung)](https://www.baeldung.com/spring-amqp-error-handling)
+3. [java code for geohashes(by kungfoo)](https://github.com/kungfoo/geohash-java)
 
 ## Databricks
 
