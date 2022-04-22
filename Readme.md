@@ -5,6 +5,7 @@
 1. [JDK SSL configuration for MySQL/Redis connections.](https://github.com/AlteracFinished/memo/blob/main/memo/JDK_8_ssl_config.md)
 2. [Error Handling with Spring AMQP(from Baeldung)](https://www.baeldung.com/spring-amqp-error-handling)
 3. [java code for geohashes(by kungfoo)](https://github.com/kungfoo/geohash-java)
+4. [Spring boot actuator prometheus(from callicoder.com)](https://www.callicoder.com/spring-boot-actuator-metrics-monitoring-dashboard-prometheus-grafana/)
 
 ## Databricks
 
@@ -22,3 +23,7 @@
 ## ElasticSearch
 
 1. [Install Elasticsearch with Docker(from elastic.co)](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
+
+## Operations
+
+1. [Disk mount in CentOS(from developpaper.com)](https://developpaper.com/complete-steps-for-centos-7-to-mount-a-new-data-disk/)
