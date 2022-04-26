@@ -24,6 +24,10 @@
 
 1. [Install Elasticsearch with Docker(from elastic.co)](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
 
+## CDH
+
+1. [Python dependencies packaging(from spark)](https://spark.apache.org/docs/3.1.1/api/python/user_guide/python_packaging.html)
+
 ## Operations
 
 1. [Disk mount in CentOS(from developpaper.com)](https://developpaper.com/complete-steps-for-centos-7-to-mount-a-new-data-disk/)
