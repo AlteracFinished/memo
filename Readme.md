@@ -28,6 +28,10 @@
 
 1. [Python dependencies packaging(from spark)](https://spark.apache.org/docs/3.1.1/api/python/user_guide/python_packaging.html)
 
+## HBase
+
+1. [HBase IO optimize(from apache)](https://docs.cloudera.com/HDPDocuments/HDP3/HDP-3.1.5/hbase-data-access/content/optimizing-hbase-io.html)
+
 ## Operations
 
 1. [Disk mount in CentOS(from developpaper.com)](https://developpaper.com/complete-steps-for-centos-7-to-mount-a-new-data-disk/)
