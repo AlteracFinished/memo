@@ -11,6 +11,7 @@
 
 1. [Processing ClickHouse bitmap in Databricks.](https://github.com/AlteracFinished/memo/blob/main/processing_bitmap_between_clickhouse_and_databricks_en.md)
 2. [Handling Clickhouse Array/Datetime64 in Databricks.](https://github.com/AlteracFinished/memo/blob/main/memo/customize_spark_jdbc_dialect_for_clickhouse_en.md)
+3. [Apache Spark Core—Deep Dive—Proper Optimization Daniel Tomes Databricks](https://www.youtube.com/watch?v=daXEp4HmS-E)
 
 ## ClickHouse
 
