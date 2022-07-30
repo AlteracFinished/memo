@@ -14,6 +14,7 @@
 ## ClickHouse
 
 1. [An optimization case of query in ClickHouse.](https://github.com/AlteracFinished/memo/blob/main/multiple_table_related_query_in_clickhouse_en.md)
+2. [ClickHouse Cluster Scaling(from engineering contentsquare)](https://engineering.contentsquare.com/2022/scaling-out-clickhouse-cluster)
 
 ## RabbitMQ
 
